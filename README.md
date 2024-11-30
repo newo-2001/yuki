@@ -1,0 +1,1 @@
+**Yuki (雪)** is a Rust library containing common helper functions and datastructures for [Advent of Code](https://adventofcode.com/) problems.
