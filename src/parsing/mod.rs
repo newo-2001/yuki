@@ -3,6 +3,8 @@ use thiserror::Error;
 
 use crate::tuples::snd;
 
+pub mod combinators;
+
 pub type ParsingResult<'a, T> = Result<(&'a str, T), nom::Err<NomError<'a>>>;
 pub type NomError<'a> = nom::error::VerboseError<&'a str>;
 

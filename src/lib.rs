@@ -4,3 +4,4 @@ pub mod spatial;
 pub mod iterators;
 pub mod num;
 pub mod math;
+pub mod errors;

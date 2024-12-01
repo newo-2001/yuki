@@ -1,3 +1,5 @@
+use thiserror::Error;
+
 pub trait ExtraIter: Iterator + Sized {
     fn try_collecting<C>(self) -> Result<C, <C as TryFromIterator<Self>>::Error> where
         C: TryFromIterator<Self, Item=Self::Item>
@@ -16,6 +18,15 @@ pub trait ExtraIter: Iterator + Sized {
             }
         })
     }
+
+    fn single(mut self) -> Result<Self::Item, SingleError> {
+        self
+            .next()
+            .map_or_else(|| Err(SingleError::None), |v| match self.next() {
+                None => Ok(v),
+                Some(_) => Err(SingleError::More)
+            })
+    }
 }
 
 impl<I: Iterator + Sized> ExtraIter for I {}
@@ -25,4 +36,10 @@ pub trait TryFromIterator<I>: Sized {
     type Error;
 
     fn try_from_iter(iter: I) -> Result<Self, Self::Error>;
+}
+
+#[derive(Debug, Error)]
+pub enum SingleError {
+    #[error("Iterator yielded no elements")] None,
+    #[error("Iterator yielded more than one element")] More
 }
