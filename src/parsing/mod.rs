@@ -22,10 +22,20 @@ pub fn parse<'a, T>(input: &'a str) -> Result<T, ParsingError> where
     run_parser(T::parse, input)
 }
 
-pub fn run_parser<'a, T, P>(parser: P, input: &'a str) -> Result<T, ParsingError> where
-    P: Parser<&'a str, T, NomError<'a>>
+pub fn run_parser<'a, O, P>(parser: P, input: &'a str) -> Result<O, ParsingError> where
+    P: Parser<&'a str, O, NomError<'a>>
 {
     complete(parser)(input)
         .map(snd)
         .map_err(|err| ParsingError(err.to_string()))
 }
+
+pub trait TextParser<'a, O> where
+    Self: Parser<&'a str, O, NomError<'a>> + Sized
+{
+    fn run(self, input: &'a str) -> Result<O, ParsingError> {
+        run_parser(self, input)
+    }
+}
+
+impl<'a, P, O> TextParser<'a, O> for P where P: Parser<&'a str, O, NomError<'a>> {}
