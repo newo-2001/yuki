@@ -5,7 +5,7 @@ use crate::tuples::snd;
 
 pub mod combinators;
 
-pub type ParsingResult<'a, T> = Result<(&'a str, T), nom::Err<NomError<'a>>>;
+pub type ParsingResult<'a, O> = Result<(&'a str, O), nom::Err<NomError<'a>>>;
 pub type NomError<'a> = nom::error::VerboseError<&'a str>;
 
 #[derive(Debug, Error)]
@@ -16,10 +16,19 @@ pub trait Parsable<'a>: Sized {
     fn parse(input: &'a str) -> ParsingResult<'a, Self>;
 }
 
-pub fn parse<'a, T>(input: &'a str) -> Result<T, ParsingError> where
-    T: Parsable<'a>
+pub fn parse<'a, O>(input: &'a str) -> Result<O, ParsingError> where
+    O: Parsable<'a>
+{   
+    run_parser(O::parse, input)
+}
+
+pub fn parse_lines<'a, O>(input: &'a str) -> Result<Vec<O>, ParsingError> where
+    O: Parsable<'a>
 {
-    run_parser(T::parse, input)
+    input
+        .lines()
+        .map(parse::<O>)
+        .collect()
 }
 
 pub fn run_parser<'a, O, P>(parser: P, input: &'a str) -> Result<O, ParsingError> where
@@ -30,7 +39,7 @@ pub fn run_parser<'a, O, P>(parser: P, input: &'a str) -> Result<O, ParsingError
         .map_err(|err| ParsingError(err.to_string()))
 }
 
-pub trait TextParser<'a, O> where
+pub trait ParserExt<'a, O> where
     Self: Parser<&'a str, O, NomError<'a>> + Sized
 {
     fn run(self, input: &'a str) -> Result<O, ParsingError> {
@@ -38,4 +47,6 @@ pub trait TextParser<'a, O> where
     }
 }
 
-impl<'a, P, O> TextParser<'a, O> for P where P: Parser<&'a str, O, NomError<'a>> {}
+impl<'a, P, O> ParserExt<'a, O> for P where
+    P: Parser<&'a str, O, NomError<'a>>,
+{}
