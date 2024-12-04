@@ -1,8 +1,13 @@
 use num_traits::Signed;
 
 pub trait Directions {
+    #[must_use]
     fn vector<T: Signed>(self) -> (T, T);
 
+    #[must_use]
+    fn inverted(self) -> Self;
+    
+    #[must_use]
     fn all() -> impl ExactSizeIterator<Item=Self>;
 }
 
@@ -15,7 +20,6 @@ pub enum Cardinal {
 }
 
 impl Directions for Cardinal {
-    #[must_use]
     fn all() -> impl ExactSizeIterator<Item=Self> {
         [
             Self::North,
@@ -25,7 +29,15 @@ impl Directions for Cardinal {
         ].into_iter()
     }
 
-    #[must_use]
+    fn inverted(self) -> Self {
+        match self {
+            Self::North => Self::South,
+            Self::East => Self::West,
+            Self::South => Self::North,
+            Self::West => Self::East
+        }
+    }
+
     fn vector<T: Signed>(self) -> (T, T) {
         match self {
             Self::North => (T::zero(), -T::one()),
@@ -59,6 +71,15 @@ impl Directions for Ordinal {
             Self::NorthWest => (-T::one(), -T::one())
         }
     }
+    
+    fn inverted(self) -> Self {
+        match self {
+            Self::NorthEast => Self::SouthWest,
+            Self::SouthEast => Self::NorthWest,
+            Self::SouthWest => Self::NorthEast,
+            Self::NorthWest => Self::SouthEast
+        }
+    }
 
     fn all() -> impl ExactSizeIterator<Item=Self> {
         [
@@ -87,6 +108,13 @@ impl Directions for Compass {
         match self {
             Self::Cardinal(direction) => direction.vector(),
             Self::Ordinal(direction) => direction.vector()
+        }
+    }
+
+    fn inverted(self) -> Self {
+        match self {
+            Self::Cardinal(direction) => Self::Cardinal(direction.inverted()),
+            Self::Ordinal(direction) => Self::Ordinal(direction.inverted())
         }
     }
 

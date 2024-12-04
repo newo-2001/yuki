@@ -1,11 +1,13 @@
-use derive_more::{Add, Sub};
-use num_traits::{One, Zero};
+use num_traits::{Num, One, Zero};
 
 use super::super::num::CheckedAddSigned;
 
 use super::direction::Directions;
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Add, Sub)]
+#[derive(
+    Debug, Clone, Copy, PartialEq, Eq, Hash,
+    derive_more::Add, derive_more::Sub, derive_more::Neg
+)]
 pub struct Point<T = u32> {
     pub x: T,
     pub y: T
@@ -16,19 +18,15 @@ impl<T> Point<T> {
         T: Copy + Zero + One + CheckedAddSigned,
         D: Directions
     {
-        D::all().filter_map(move |direction| self + direction)
+        D::all().filter_map(move |direction| self.add_signed(direction.vector()))
     }
-}
 
-impl<T, D> Add<D> for Point<T> where
-    T: Zero + One + CheckedAddSigned,
-    D: Directions
-{
-    type Output = Option<Self>;
-    
-    fn add(self, rhs: D) -> Self::Output {
-        let (dx, dy) = rhs.vector::<T::Signed>();
+    pub fn add_signed<U>(self, rhs: U) -> Option<Self> where
+        T: CheckedAddSigned,
+        U: Into<Point<T::Signed>>
+    {
         let Self { x, y } = self;
+        let Point::<T::Signed> { x: dx, y: dy } = rhs.into();
 
         Some(Self {
             x: x.checked_add_signed(dx)?,
@@ -36,6 +34,27 @@ impl<T, D> Add<D> for Point<T> where
         })
     }
 }
+
+macro_rules! impl_scalar_op {
+    ($trait:ident, $function:ident, $operator:tt) => {
+        impl<T> std::ops::$trait<T> for Point<T> where
+            T: std::ops::$trait<Output=T> + Num + Copy
+        {
+            type Output = Self;
+
+            fn $function(self, rhs: T) -> Self::Output {
+                Self {
+                    x: self.x $operator rhs,
+                    y: self.y $operator rhs
+                }
+            }
+        }
+    }
+}
+
+impl_scalar_op!(Add, add, +);
+impl_scalar_op!(Sub, sub, -);
+impl_scalar_op!(Mul, mul, *);
 
 impl<T> From<(T, T)> for Point<T> {
     fn from((x, y): (T, T)) -> Self {
