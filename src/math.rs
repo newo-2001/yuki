@@ -9,10 +9,9 @@ pub trait GaussSum {
 }
 
 impl<T> GaussSum for T where
-    T: One + Add + Copy + Mul<<T as Add<T>>::Output>,
-    <T as Mul<<T as Add<T>>::Output>>::Output: Div<<T as Add<T>>::Output>
+    T: Copy + Add<Output = T> + Mul<Output = T> + Div<Output = T> + One<Output = T>
 {
-    type Output = <<T as Mul<<T as Add>::Output>>::Output as Div<<T as Add<T>>::Output>>::Output;
+    type Output = T;
 
     fn gauss_sum(self) -> Self::Output {
         let two = T::one() + T::one();

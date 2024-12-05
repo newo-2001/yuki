@@ -7,8 +7,8 @@ pub trait ExtraIter: Iterator + Sized {
         C::try_from_iter(self)
     }
 
-    fn min_max(self) -> Option<(Self::Item, Self::Item)>
-        where Self::Item: Ord + Copy
+    fn min_max(self) -> Option<(Self::Item, Self::Item)> where
+        Self::Item: Ord + Copy
     {
         self.fold(None, |acc, x| {
             if let Some((min, max)) = acc {
