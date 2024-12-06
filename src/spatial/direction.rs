@@ -1,6 +1,9 @@
+use nom::{branch::alt, character::complete::{char, one_of}, combinator::value, Parser};
 use num_traits::Signed;
 
-pub trait Directions {
+use crate::parsing::{Parsable, ParsingResult};
+
+pub trait Directions: Sized {
     #[must_use]
     fn vector<T: Signed>(self) -> (T, T);
 
@@ -48,6 +51,32 @@ impl Directions for Cardinal {
     }
 }
 
+impl Cardinal {
+    #[must_use]
+    pub const fn turn(self, direction: Rotation) -> Self {
+        use Rotation::{Clockwise as CW, CounterClockwise as CCW};
+
+        match (direction, self) {
+            (CW, Self::North) | (CCW, Self::South) => Self::East,
+            (CW, Self::East) | (CCW, Self::West)=> Self::South,
+            (CW, Self::South) | (CCW, Self::North)=> Self::West,
+            (CW, Self::West) | (CCW, Self::East) => Self::North
+        }
+    }
+}
+
+impl<'a> Parsable<'a> for Cardinal {
+    fn parse(input: &'a str) -> ParsingResult<'a, Self> {
+        alt((
+            value(Self::North, char('^')),
+            value(Self::East, char('>')),
+            value(Self::South, one_of("Vv")),
+            value(Self::West, char('<'))
+        ))
+        .parse(input)
+    }
+}
+
 impl<T: Signed> From<Cardinal> for (T, T) where {
     fn from(val: Cardinal) -> Self {
         val.vector()
@@ -88,6 +117,20 @@ impl Directions for Ordinal {
             Self::SouthWest,
             Self::NorthWest
         ].into_iter()
+    }
+}
+
+impl Ordinal {
+    #[must_use]
+    pub const fn turn(self, direction: Rotation) -> Self {
+        use Rotation::{Clockwise as CW, CounterClockwise as CCW};
+
+        match (direction, self) {
+            (CW, Self::NorthEast) | (CCW, Self::SouthWest) => Self::SouthEast,
+            (CW, Self::SouthEast) | (CCW, Self::NorthWest) => Self::SouthWest,
+            (CW, Self::SouthWest) | (CCW, Self::NorthEast) => Self::NorthWest,
+            (CW, Self::NorthWest) | (CCW, Self::SouthEast) => Self::NorthEast
+        }
     }
 }
 
@@ -132,8 +175,43 @@ impl Directions for Compass {
     }
 }
 
+impl Compass {
+    #[must_use]
+    pub const fn turn(self, direction: Rotation) -> Self {
+        use Rotation::{Clockwise as CW, CounterClockwise as CCW};
+        use self::{Cardinal as Card, Ordinal as Ord};
+
+        match (direction, self) {
+            (CW, Self::Cardinal(Card::North)) | (CCW, Self::Cardinal(Card::East)) => Self::Ordinal(Ord::NorthEast),
+            (CW, Self::Cardinal(Card::East)) | (CCW, Self::Cardinal(Card::South)) => Self::Ordinal(Ord::SouthEast),
+            (CW, Self::Cardinal(Card::South)) | (CCW, Self::Cardinal(Card::West)) => Self::Ordinal(Ord::SouthWest),
+            (CW, Self::Cardinal(Card::West)) | (CCW, Self::Cardinal(Card::North)) => Self::Ordinal(Ord::NorthWest),
+            (CW, Self::Ordinal(Ord::NorthEast)) | (CCW, Self::Ordinal(Ord::SouthEast)) => Self::Cardinal(Card::East),
+            (CW, Self::Ordinal(Ord::SouthEast)) | (CCW, Self::Ordinal(Ord::SouthWest)) => Self::Cardinal(Card::South),
+            (CW, Self::Ordinal(Ord::SouthWest)) | (CCW, Self::Ordinal(Ord::NorthWest)) => Self::Cardinal(Card::West),
+            (CW, Self::Ordinal(Ord::NorthWest)) | (CCW, Self::Ordinal(Ord::NorthEast)) => Self::Cardinal(Card::North)
+        }
+    }
+}
+
 impl<T: Signed> From<Compass> for (T, T) where {
     fn from(val: Compass) -> Self {
         val.vector()
+    }
+}
+
+#[derive(Debug, Clone, Copy, Hash, PartialEq, Eq)]
+pub enum Rotation {
+    Clockwise,
+    CounterClockwise
+}
+
+impl Rotation {
+    #[must_use]
+    pub const fn inverted(self) -> Self {
+        match self {
+            Self::Clockwise => Self::CounterClockwise,
+            Self::CounterClockwise => Self::Clockwise
+        }
     }
 }
