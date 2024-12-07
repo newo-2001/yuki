@@ -2,9 +2,11 @@ use std::ops::{Add, Div, Mul};
 
 use num_traits::One;
 
+/// Trait for the gaussian sum of contiguous ranges
 pub trait GaussSum {
     type Output;
 
+    /// Computes the guassian sum in `O(1)` time
     fn gauss_sum(self) -> Self::Output;
 }
 

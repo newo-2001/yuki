@@ -3,17 +3,22 @@ use num_traits::Signed;
 
 use crate::parsing::{Parsable, ParsingResult};
 
+/// Represents a set of directions
 pub trait Directions: Sized {
+    /// Obtain the direction vector associated with a given direction
     #[must_use]
     fn vector<T: Signed>(self) -> (T, T);
 
+    /// Invert the direction to get the direction opposite of it
     #[must_use]
     fn inverted(self) -> Self;
     
+    /// Creates an iterator over all directions in this set
     #[must_use]
     fn all() -> impl ExactSizeIterator<Item=Self>;
 }
 
+/// Cardinal directions are the four prevalent directions in 2D space
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum Cardinal {
     North,
@@ -83,6 +88,8 @@ impl<T: Signed> From<Cardinal> for (T, T) where {
     }
 }
 
+/// The Ordinal directions sit between the [`Cardinal`] directions
+/// and represent diagonals in 2D space
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum Ordinal {
     NorthEast,
@@ -140,6 +147,8 @@ impl<T: Signed> From<Ordinal> for (T, T) where {
     }
 }
 
+/// A Compass direction is a combination of [`Cardinal`] and [`Ordinal`] directions
+/// (as seen on a compass)
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum Compass {
     Cardinal(Cardinal),
@@ -200,6 +209,8 @@ impl<T: Signed> From<Compass> for (T, T) where {
     }
 }
 
+/// A rotation direction represents a relative direction, not unlike `left` or `right`.
+/// These can be used to create new directions from existing ones
 #[derive(Debug, Clone, Copy, Hash, PartialEq, Eq)]
 pub enum Rotation {
     Clockwise,

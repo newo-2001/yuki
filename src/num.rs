@@ -1,5 +1,7 @@
 use num_traits::Signed;
 
+/// Trait for adding a signed variant of a number to another
+/// whilst checking for underflows
 pub trait CheckedAddSigned where
     Self: Sized,
     Self::Signed: Signed

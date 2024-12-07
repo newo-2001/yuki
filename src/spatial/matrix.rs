@@ -6,12 +6,14 @@ use crate::iterators::TryFromIterator;
 
 use super::Point;
 
+/// A Matrix is a dense `N * M` 2D array
 #[derive(Debug, Clone, Hash, PartialEq, Eq)]
 pub struct Matrix<T> {
     data: Box<[T]>,
     columns: usize
 }
 
+/// Error returned when attempting to create a [`Matrix`] with variable row sizes
 #[derive(Debug, Error, Clone, Copy)]
 #[error("Cannot construct a matrix from variable rows")]
 pub struct VariableRows;
@@ -100,12 +102,14 @@ impl<'a, T> IntoIterator for &'a mut Matrix<T> {
 }
 
 impl<T> Matrix<T> {
+    /// Returns the amount of columns the matrix has
     #[must_use]
     pub const fn cols(&self) -> usize {
         self.columns
     }
 
     #[must_use]
+    /// Returns the amount of rows the matrix has
     pub const fn rows(&self) -> usize {
         match self.columns {
             0 => 0,
@@ -114,24 +118,33 @@ impl<T> Matrix<T> {
     }
 
     #[must_use]
+    /// Attempts to retrive an element from the matrix at the specified index
     pub fn get(&self, index: Point<usize>) -> Option<&T> {
         let Point { x, y } = index;
         (x < self.cols() && y < self.rows())
             .then(|| self.index(index))
     }
 
+    /// Creates an iterator over all the elements in the matrix
+    /// 
+    /// The iterator moves left-to-right, top-to-bottom
     pub fn iter(&self) -> core::slice::Iter<T> {
         self.data.iter()
     }
     
+    /// Creates a mutable iterator over all the elements in the matrix
+    /// 
+    /// The iterator moves left-to-right, top-to-bottom
     pub fn iter_mut(&mut self) -> core::slice::IterMut<T> {
         self.data.iter_mut()
     }
 
+    /// Create an iterator over all the rows in the matrix
     pub fn iter_rows(&self) -> core::slice::ChunksExact<T> {
         self.data.chunks_exact(self.columns)
     }
 
+    /// Creates an iterator over all the columns in the matrix
     pub fn iter_cols(&self) -> impl Iterator<Item=impl ExactSizeIterator<Item=&T>> {
         (0..self.columns)
             .map(|col| {
@@ -142,6 +155,7 @@ impl<T> Matrix<T> {
             })
     }
 
+    /// Creates a consuming iterator that drains the matrix row by row
     #[must_use]
     pub fn into_rows(self) -> IntoRows<T> {
         IntoRows {
@@ -150,6 +164,7 @@ impl<T> Matrix<T> {
         }
     }
 
+    /// Creates a consuming iterator that drains the matrix column by column
     #[must_use]
     pub fn into_cols(self) -> IntoRows<T> where T: Clone {
         self
@@ -157,6 +172,7 @@ impl<T> Matrix<T> {
             .into_rows()
     }
 
+    /// Transposes the matrix, switching rows and columns
     #[must_use]
     pub fn transpose(self) -> Self where T: Clone {
         let columns = self.rows();
@@ -169,6 +185,8 @@ impl<T> Matrix<T> {
         Self { data, columns }
     }
 
+    /// Creates an iterator over every element in the matrix
+    /// paired with the [`Point`] representing the index
     pub fn enumerate(&self) -> impl Iterator<Item=(Point<usize>, &T)>{
         self
             .iter_rows()
@@ -180,22 +198,25 @@ impl<T> Matrix<T> {
             )
     }
 
+    /// Perform a mapping on every element of the matrix
+    /// using the specified mapping function
     #[must_use]
-    pub fn map<F>(&self, mapper: F) -> Self where
-        F: Fn((Point<usize>, &T)) -> T
+    pub fn map<F, U>(&self, mapper: F) -> Matrix<U> where
+        F: Fn((Point<usize>, &T)) -> U
     {
-        let data: Box<[T]> = self
+        let data: Box<[U]> = self
             .enumerate()
             .map(mapper)
             .collect();
 
-        Self {
+        Matrix {
             columns: self.columns,
             data
         }
     }
 }
 
+/// An iterator that drains a matrix row by row
 pub struct IntoRows<T> {
     data: Vec<T>,
     columns: usize

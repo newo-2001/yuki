@@ -1,3 +1,5 @@
+#![feature(cmp_minmax)]
+
 pub mod parsing;
 pub mod tuples;
 pub mod spatial;
