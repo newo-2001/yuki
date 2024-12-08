@@ -41,10 +41,12 @@ impl<T> Area<T> {
     }
 
     /// Determines if `point` is contained in the area
-    pub fn contains(self, point: Point<T>) -> bool where
-        T: Copy + PartialOrd + Add<Output=T> + TryFrom<usize>
+    pub fn contains<U>(self, point: Point<U>) -> bool where
+        T: Copy + PartialOrd + Add<Output=T> + TryFrom<usize>,
+        U: TryInto<T>
     {
         let bottom_right = self.top_left + Point::from(self.dimensions).cast::<T>().unwrap();
+        let Some(point) = point.cast::<T>() else { return false; };
 
         point.x >= self.top_left.x
             && point.y >= self.top_left.y
@@ -162,8 +164,9 @@ mod tests {
     
     #[test]
     fn area_contains() {
-        assert!(Area::<usize>::from_dimensions(2, 2).contains(Point::one()));
-        assert!(!Area::<usize>::from_dimensions(0, 0).contains(Point::zero()));
+        assert!(Area::<usize>::from_dimensions(2, 2).contains(Point::<isize>::one()));
+        assert!(!Area::<usize>::from_dimensions(0, 0).contains(Point::<usize>::zero()));
+        assert!(!Area::<usize>::from_dimensions(2, 2).contains(Point::new(-1, -1)));
     }
 
     #[test]
