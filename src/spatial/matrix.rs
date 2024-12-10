@@ -3,7 +3,7 @@ use std::ops::{Index, IndexMut};
 use nom::{multi::many1, Parser, combinator::map_res};
 use thiserror::Error;
 
-use crate::{iterators::{ExtraIter, TryFromIterator}, parsing::{combinators::lines, Parsable, ParsingResult}};
+use crate::{iterators::{Enumerate2D, ExtraIter, TryFromIterator}, parsing::{combinators::lines, Parsable, ParsingResult}};
 
 use super::Point;
 
@@ -186,19 +186,6 @@ impl<T> Matrix<T> {
         Self { data, columns }
     }
 
-    /// Creates an iterator over every element in the matrix
-    /// paired with the [`Point`] representing the index
-    pub fn enumerate(&self) -> impl Iterator<Item=(Point<usize>, &T)>{
-        self
-            .iter_rows()
-            .enumerate()
-            .flat_map(|(y, row)| row
-                .iter()
-                .enumerate()
-                .map(move |(x, value)| (Point { x, y }, value))
-            )
-    }
-
     /// Perform a mapping on every element of the matrix
     /// using the specified mapping function
     #[must_use]
@@ -206,7 +193,8 @@ impl<T> Matrix<T> {
         F: Fn((Point<usize>, &T)) -> U
     {
         let data: Box<[U]> = self
-            .enumerate()
+            .iter_rows()
+            .enumerate2d()
             .map(mapper)
             .collect();
 
