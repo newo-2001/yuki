@@ -1,4 +1,4 @@
-use nom::{combinator::complete, Parser};
+use nom::{combinator::complete, Parser, character::complete::{u8, i8, u16, i16, u32, i32, u64, i64, u128, i128}};
 use thiserror::Error;
 
 use crate::tuples::snd;
@@ -50,3 +50,24 @@ pub trait ParserExt<'a, O> where
 impl<'a, P, O> ParserExt<'a, O> for P where
     P: Parser<&'a str, O, NomError<'a>>,
 {}
+
+macro_rules! impl_parsable {
+    ($type: ty, $parser: expr) => {
+        impl<'a> Parsable<'a> for $type {
+            fn parse(input: &'a str) -> ParsingResult<'a, Self> {
+                $parser(input)
+            }
+        }
+    }
+}
+
+impl_parsable!(u8, u8);
+impl_parsable!(i8, i8);
+impl_parsable!(u16, u16);
+impl_parsable!(i16, i16);
+impl_parsable!(u32, u32);
+impl_parsable!(i32, i32);
+impl_parsable!(u64, u64);
+impl_parsable!(i64, i64);
+impl_parsable!(u128, u128);
+impl_parsable!(i128, i128);

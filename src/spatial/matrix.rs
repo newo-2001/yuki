@@ -1,8 +1,9 @@
 use std::ops::{Index, IndexMut};
 
+use nom::{multi::many1, Parser, combinator::map_res};
 use thiserror::Error;
 
-use crate::iterators::TryFromIterator;
+use crate::{iterators::{ExtraIter, TryFromIterator}, parsing::{combinators::lines, Parsable, ParsingResult}};
 
 use super::Point;
 
@@ -213,6 +214,20 @@ impl<T> Matrix<T> {
             columns: self.columns,
             data
         }
+    }
+}
+
+impl<'a, T> Parsable<'a> for Matrix<T> where
+    T: Parsable<'a> + Clone
+{
+    fn parse(input: &'a str) -> ParsingResult<'a, Self> {
+        map_res(
+            lines(
+                many1(T::parse)
+            ),
+            |matrix| matrix.into_iter().try_collecting()
+        )
+        .parse(input)
     }
 }
 
