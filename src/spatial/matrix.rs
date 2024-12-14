@@ -2,6 +2,7 @@ use std::ops::{Index, IndexMut};
 
 use nom::{multi::many1, Parser, combinator::map_res};
 use thiserror::Error;
+use itertools::Itertools;
 
 use crate::{iterators::{Enumerate2D, ExtraIter, TryFromIterator}, parsing::{combinators::lines, Parsable, ParsingResult}};
 
@@ -27,11 +28,11 @@ impl<T, I> TryFromIterator<I> for Matrix<T> where
     type Item = I::Item;
     type Error = VariableRows;
 
-    fn try_from_iter(iter: I) -> Result<Self, Self::Error> where
-    {
+    fn try_from_iter(iter: I) -> Result<Self, Self::Error> {
         let mut columns: Option<usize> = None;
 
         let data = iter
+            .into_iter()
             .map(|row| {
                 let row = row.into_iter();
                 let length = row.clone().count();
@@ -44,10 +45,8 @@ impl<T, I> TryFromIterator<I> for Matrix<T> where
                     }
                 }
             })
+            .flatten_ok()
             .collect::<Result<Vec<_>, _>>()?
-            .into_iter()
-            .flatten()
-            .collect::<Vec<_>>()
             .into_boxed_slice();
 
         Ok(Self {
@@ -119,7 +118,7 @@ impl<T> Matrix<T> {
     }
 
     #[must_use]
-    /// Attempts to retrive an element from the matrix at the specified index
+    /// Attempts to retrieve an element from the matrix at the specified index
     pub fn get(&self, index: Point<usize>) -> Option<&T> {
         let Point { x, y } = index;
         (x < self.cols() && y < self.rows())

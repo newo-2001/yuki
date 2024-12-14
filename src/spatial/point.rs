@@ -1,4 +1,4 @@
-use std::cmp::minmax;
+use std::cmp::{minmax, Ordering};
 use std::ops::{Add, Sub};
 
 use num_traits::{Num, One, Zero};
@@ -103,6 +103,21 @@ impl<T> From<Point<T>> for (T, T) {
     }
 }
 
+impl<T> PartialOrd for Point<T> where
+    T: PartialOrd
+{
+    /// The product order of the points on the cartesian plane
+    fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
+        let x = self.x.partial_cmp(&other.x)?;
+        let y = self.y.partial_cmp(&other.y)?;
+
+        match (x, y) {
+            (Ordering::Equal, order) | (order, Ordering::Equal) => Some(order),
+            (_, _) => None
+        }
+    }
+}
+
 macro_rules! impl_scalar_op {
     ($trait:ident, $function:ident, $operator:tt) => {
         impl<T> std::ops::$trait<T> for Point<T> where
@@ -149,5 +164,13 @@ mod tests {
     fn point_cast() {
         assert_eq!(Some(Point::<usize>::new(1, 0)), Point::<isize>::new(1, 0).cast::<usize>());
         assert_eq!(None, Point::<u8>::new(255, 0).cast::<i8>());
+    }
+
+    #[test]
+    fn point_order() {
+        assert_eq!(None, Point::new(0, 1).partial_cmp(&Point::new(1, 0)));
+        assert_eq!(Some(Ordering::Equal), Point::new(1, 1).partial_cmp(&Point::new(1, 1)));
+        assert_eq!(Some(Ordering::Greater), Point::new(0, 1).partial_cmp(&Point::new(0, 0)));
+        assert_eq!(Some(Ordering::Less), Point::new(0, 0).partial_cmp(&Point::new(1, 0)));
     }
 }

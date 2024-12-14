@@ -10,20 +10,6 @@ pub trait ExtraIter: Iterator + Sized {
         C::try_from_iter(self)
     }
 
-    /// Return the minimum and maximum element in the iterator
-    /// using a single pass
-    fn min_max(self) -> Option<(Self::Item, Self::Item)> where
-        Self::Item: Ord + Copy
-    {
-        self.fold(None, |acc, x| {
-            if let Some((min, max)) = acc {
-                Some((x.min(min), x.max(max)))
-            } else {
-                Some((x, x))
-            }
-        })
-    }
-
     /// Assert that the iterator yields a single element and return it
     fn single(mut self) -> Result<Self::Item, SingleError> {
         self
@@ -89,13 +75,6 @@ mod tests {
         assert_eq!(Ok(1), once(1).single());
         assert_eq!(Err(SingleError::None), empty::<()>().single());
         assert_eq!(Err(SingleError::More), [1, 2].into_iter().single());
-    }
-
-    #[test]
-    fn extra_iter_min_max() {
-        assert_eq!(Some((2, 5)), [2, 3, 5, 4].into_iter().min_max());
-        assert_eq!(None, empty::<u32>().min_max());
-        assert_eq!(Some((2, 2)), once(2).min_max());
     }
 
     #[test]
