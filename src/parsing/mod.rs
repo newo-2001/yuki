@@ -1,4 +1,4 @@
-use nom::{combinator::complete, Parser, character::complete::{u8, i8, u16, i16, u32, i32, u64, i64, u128, i128}};
+use nom::{character::complete::{i128, i16, i32, i64, i8, u128, u16, u32, u64, u8}, combinator::all_consuming, Parser};
 use thiserror::Error;
 
 use crate::tuples::snd;
@@ -34,7 +34,7 @@ pub fn parse_lines<'a, O>(input: &'a str) -> Result<Vec<O>, ParsingError> where
 pub fn run_parser<'a, O, P>(parser: P, input: &'a str) -> Result<O, ParsingError> where
     P: Parser<&'a str, O, NomError<'a>>
 {
-    complete(parser)(input)
+    all_consuming(parser)(input)
         .map(snd)
         .map_err(|err| ParsingError(err.to_string()))
 }
