@@ -1,12 +1,12 @@
-use nom::{character::complete::{i128, i16, i32, i64, i8, u128, u16, u32, u64, u8}, combinator::all_consuming, Parser};
+use nom::{IResult, Parser, character::complete::{i8, i16, i32, i64, i128, u8, u16, u32, u64, u128}, combinator::all_consuming};
 use thiserror::Error;
 
 use crate::tuples::snd;
 
 pub mod combinators;
 
-pub type ParsingResult<'a, O> = Result<(&'a str, O), nom::Err<NomError<'a>>>;
-pub type NomError<'a> = nom::error::VerboseError<&'a str>;
+pub type ParsingResult<'a, O> = IResult<&'a str, O, NomError<'a>>;
+pub type NomError<'a> = nom_language::error::VerboseError<&'a str>;
 
 #[derive(Debug, Error)]
 #[error("{0}")]
@@ -32,15 +32,16 @@ pub fn parse_lines<'a, O>(input: &'a str) -> Result<Vec<O>, ParsingError> where
 }
 
 pub fn run_parser<'a, O, P>(parser: P, input: &'a str) -> Result<O, ParsingError> where
-    P: Parser<&'a str, O, NomError<'a>>
+    P: Parser<&'a str, Output = O, Error = NomError<'a>>
 {
-    all_consuming(parser)(input)
+    all_consuming(parser)
+        .parse(input)
         .map(snd)
         .map_err(|err| ParsingError(err.to_string()))
 }
 
 pub trait ParserExt<'a, O> where
-    Self: Parser<&'a str, O, NomError<'a>> + Sized
+    Self: Parser<&'a str, Output = O, Error = NomError<'a>> + Sized
 {
     fn run(self, input: &'a str) -> Result<O, ParsingError> {
         run_parser(self, input)
@@ -48,7 +49,7 @@ pub trait ParserExt<'a, O> where
 }
 
 impl<'a, P, O> ParserExt<'a, O> for P where
-    P: Parser<&'a str, O, NomError<'a>>,
+    P: Parser<&'a str, Output = O, Error = NomError<'a>>,
 {}
 
 macro_rules! impl_parsable {

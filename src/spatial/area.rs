@@ -172,7 +172,7 @@ impl<T> DoubleEndedIterator for Iter<T> where
         if self.end <= self.index { return None; }
         self.end -= 1;
 
-        let width= self.area.dimensions.0;
+        let width = self.area.dimensions.0;
         let offset = Point {
             x: self.end % width,
             y: self.end / width
@@ -218,8 +218,17 @@ mod tests {
     #[test]
     fn area_into_iter() {
         let area = Area::from_dimensions(2, 3);
-        let points = [(0, 0), (1, 0), (0, 1), (1, 1), (0, 2), (1, 2)]
-            .map(Point::from);
+        let points = [(0, 0), (1, 0), (0, 1), (1, 1), (0, 2), (1, 2)].map(Point::from);
+
+        assert_eq!(points.len(), area.into_iter().len());
+        assert_equal(points, area);
+        assert_equal(
+            points.into_iter().rev(),
+            area.into_iter().rev()
+        );
+
+        let area = Area::new(Point::one(), (2, 2));
+        let points = [(1, 1), (2, 1), (1, 2), (2, 2)].map(Point::from);
 
         assert_eq!(points.len(), area.into_iter().len());
         assert_equal(points, area);

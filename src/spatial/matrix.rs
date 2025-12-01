@@ -128,19 +128,19 @@ impl<T> Matrix<T> {
     /// Creates an iterator over all the elements in the matrix
     /// 
     /// The iterator moves left-to-right, top-to-bottom
-    pub fn iter(&self) -> core::slice::Iter<T> {
+    pub fn iter(&self) -> core::slice::Iter<'_, T> {
         self.data.iter()
     }
     
     /// Creates a mutable iterator over all the elements in the matrix
     /// 
     /// The iterator moves left-to-right, top-to-bottom
-    pub fn iter_mut(&mut self) -> core::slice::IterMut<T> {
+    pub fn iter_mut(&mut self) -> core::slice::IterMut<'_, T> {
         self.data.iter_mut()
     }
 
     /// Create an iterator over all the rows in the matrix
-    pub fn iter_rows(&self) -> core::slice::ChunksExact<T> {
+    pub fn iter_rows(&self) -> core::slice::ChunksExact<'_, T> {
         self.data.chunks_exact(self.columns)
     }
 

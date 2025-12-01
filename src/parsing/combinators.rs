@@ -1,12 +1,9 @@
-use std::ops::{Range, RangeFrom, RangeTo};
+use nom::{AsChar, Compare, Input, Parser, character::complete::{char, line_ending}, combinator::map, error::ParseError, multi::separated_list0, sequence::delimited};
 
-use nom::{character::complete::{char, line_ending}, combinator::map, error::ParseError, multi::separated_list0, sequence::delimited, AsChar, Compare, IResult, InputIter, InputLength, Slice};
-
-pub fn lines<I, O, E, F>(parser: F) -> impl FnMut(I) -> IResult<I, Vec<O>, E> where
-    F: FnMut(I) -> IResult<I, O, E>,
+pub fn lines<I, O, E, F>(parser: F) -> impl Parser<I, Output = Vec<O>, Error = E> where
+    F: Parser<I, Output = O, Error = E>,
     E: ParseError<I>,
-    I: Clone + InputLength + InputIter + Compare<&'static str> +
-       Slice<Range<usize>> + Slice<RangeFrom<usize>> + Slice<RangeTo<usize>>
+    I: Clone + Input + Compare<&'static str> +
 {
     separated_list0(
         line_ending,
@@ -14,53 +11,53 @@ pub fn lines<I, O, E, F>(parser: F) -> impl FnMut(I) -> IResult<I, Vec<O>, E> wh
     )
 }
 
-pub fn parens<I, O, E, F>(parser: F) -> impl FnMut(I) -> IResult<I, O, E> where
-    F: FnMut(I) -> IResult<I, O, E>,
+pub fn parens<I, O, E, F>(parser: F) -> impl Parser<I, Output = O, Error = E> where
+    F: Parser<I, Output = O, Error = E>,
     E: ParseError<I>,
-    I: InputIter + Slice<RangeFrom<usize>>,
-    <I as InputIter>::Item: AsChar
+    I: Input,
+    I::Item: AsChar
 {
     delimited(char('('), parser, char(')'))
 }
 
-pub fn square_brackets<I, O, E, F>(parser: F) -> impl FnMut(I) -> IResult<I, O, E> where
-    F: FnMut(I) -> IResult<I, O, E>,
+pub fn square_brackets<I, O, E, F>(parser: F) -> impl Parser<I, Output = O, Error = E> where
+    F: Parser<I, Output = O, Error = E>,
     E: ParseError<I>,
-    I: InputIter + Slice<RangeFrom<usize>>,
-    <I as InputIter>::Item: AsChar
+    I: Input,
+    I::Item: AsChar
 {
     delimited(char('['), parser, char(']'))
 }
 
-pub fn curly_brackets<I, O, E, F>(parser: F) -> impl FnMut(I) -> IResult<I, O, E> where
-    F: FnMut(I) -> IResult<I, O, E>,
+pub fn curly_brackets<I, O, E, F>(parser: F) -> impl Parser<I, Output = O, Error = E> where
+    F: Parser<I, Output = O, Error = E>,
     E: ParseError<I>,
-    I: InputIter + Slice<RangeFrom<usize>>,
-    <I as InputIter>::Item: AsChar
+    I: Input,
+    I::Item: AsChar
 {
     delimited(char('{'), parser, char('}'))
 }
 
-pub fn angle_brackets<I, O, E, F>(parser: F) -> impl FnMut(I) -> IResult<I, O, E> where
-    F: FnMut(I) -> IResult<I, O, E>,
+pub fn angle_brackets<I, O, E, F>(parser: F) -> impl Parser<I, Output = O, Error = E> where
+    F: Parser<I, Output = O, Error = E>,
     E: ParseError<I>,
-    I: InputIter + Slice<RangeFrom<usize>>,
-    <I as InputIter>::Item: AsChar
+    I: Input,
+    I::Item: AsChar
 {
     delimited(char('<'), parser, char('>'))
 }
 
-pub fn quoted<I, O, E, F>(parser: F) -> impl FnMut(I) -> IResult<I, O, E> where
-    F: FnMut(I) -> IResult<I, O, E>,
+pub fn quoted<I, O, E, F>(parser: F) -> impl Parser<I, Output = O, Error = E> where
+    F: Parser<I, Output = O, Error = E>,
     E: ParseError<I>,
-    I: InputIter + Slice<RangeFrom<usize>>,
-    <I as InputIter>::Item: AsChar
+    I: Input,
+    I::Item: AsChar
 {
     delimited(char('"'), parser, char('"'))
 }
 
-pub fn map2<I, O, E, F, M, O1, O2>(parser: F, mapper: M) -> impl FnMut(I) -> IResult<I, O, E>
-    where F: FnMut(I) -> IResult<I, (O1, O2), E>,
+pub fn map2<I, O, E, F, M, O1, O2>(parser: F, mapper: M) -> impl Parser<I, Output = O, Error = E>
+    where F: Parser<I, Output = (O1, O2), Error = E>,
           M: Fn(O1, O2) -> O,
           E: ParseError<I>
 {
@@ -68,10 +65,10 @@ pub fn map2<I, O, E, F, M, O1, O2>(parser: F, mapper: M) -> impl FnMut(I) -> IRe
 }
 
 pub trait Map2<I, O1, O2, E> where
-    Self: FnMut(I) -> IResult<I, (O1, O2), E> + Sized,
+    Self: Parser<I, Output = (O1, O2), Error = E> + Sized,
     E: ParseError<I>
 {
-    fn map2<O, M>(self, mapper: M) -> impl FnMut(I) -> IResult<I, O, E> where
+    fn map2<O, M>(self, mapper: M) -> impl Parser<I, Output = O, Error = E> where
         M: Fn(O1, O2) -> O
     {
         map2(self, mapper)
@@ -79,12 +76,12 @@ pub trait Map2<I, O1, O2, E> where
 }
 
 impl<I, O1, O2, E, F> Map2<I, O1, O2, E> for F where
-    F: FnMut(I) -> IResult<I, (O1, O2), E>,
+    F: Parser<I, Output = (O1, O2), Error = E>,
     E: ParseError<I>
 {}
 
-pub fn map3<I, O, E, F, M, O1, O2, O3>(parser: F, mapper: M) -> impl FnMut(I) -> IResult<I, O, E> where
-    F: FnMut(I) -> IResult<I, (O1, O2, O3), E>,
+pub fn map3<I, O, E, F, M, O1, O2, O3>(parser: F, mapper: M) -> impl Parser<I, Output = O, Error = E> where
+    F: Parser<I, Output = (O1, O2, O3), Error = E>,
     M: Fn(O1, O2, O3) -> O,
     E: ParseError<I>
 {
@@ -92,10 +89,10 @@ pub fn map3<I, O, E, F, M, O1, O2, O3>(parser: F, mapper: M) -> impl FnMut(I) ->
 }
 
 pub trait Map3<I, O1, O2, O3, E> where
-    Self: FnMut(I) -> IResult<I, (O1, O2, O3), E> + Sized,
+    Self: Parser<I, Output = (O1, O2, O3), Error = E> + Sized,
     E: ParseError<I>
 {
-    fn map3<O, M>(self, mapper: M) -> impl FnMut(I) -> IResult<I, O, E> where
+    fn map3<O, M>(self, mapper: M) -> impl Parser<I, Output = O, Error = E> where
         M: Fn(O1, O2, O3) -> O
     {
         map3(self, mapper)
@@ -103,6 +100,6 @@ pub trait Map3<I, O1, O2, O3, E> where
 }
 
 impl<I, O1, O2, O3, E, F> Map3<I, O1, O2, O3, E> for F where
-    F: FnMut(I) -> IResult<I, (O1, O2, O3), E>,
+    F: Parser<I, Output = (O1, O2, O3), Error = E>,
     E: ParseError<I>
 {}
