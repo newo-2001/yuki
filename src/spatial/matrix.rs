@@ -1,4 +1,4 @@
-use std::ops::{Index, IndexMut};
+use std::{mem, ops::{Index, IndexMut}};
 
 use nom::{multi::many1, Parser, combinator::map_res};
 use thiserror::Error;
@@ -17,7 +17,7 @@ pub struct Matrix<T> {
 
 /// Error returned when attempting to create a [`Matrix`] with variable row sizes
 #[derive(Debug, Error, Clone, Copy)]
-#[error("Cannot construct a matrix from variable rows")]
+#[error("Cannot construct a matrix from variable length rows")]
 pub struct VariableRows;
 
 impl<T, I> TryFromIterator<I> for Matrix<T> where
@@ -67,8 +67,8 @@ impl<T> Index<Point<usize>> for Matrix<T> {
 
 impl<T> IndexMut<Point<usize>> for Matrix<T> {
     fn index_mut(&mut self, index: Point<usize>) -> &mut Self::Output {
-        let (row, col) = index.into();
-        &mut self.data[row * self.columns + col]
+        let Point { x, y } = index;
+        &mut self.data[y * self.columns + x]
     }
 }
 
@@ -125,6 +125,14 @@ impl<T> Matrix<T> {
             .then(|| self.index(index))
     }
 
+    #[must_use]
+    /// Attempts to retrieve a mutable element from the matrix at the specified index
+    pub fn get_mut(&mut self, index: Point<usize>) -> Option<&mut T> {
+        let Point { x, y } = index;
+        (x < self.cols() && y < self.rows())
+            .then(|| self.index_mut(index))
+    }
+
     /// Creates an iterator over all the elements in the matrix
     /// 
     /// The iterator moves left-to-right, top-to-bottom
@@ -142,6 +150,11 @@ impl<T> Matrix<T> {
     /// Create an iterator over all the rows in the matrix
     pub fn iter_rows(&self) -> core::slice::ChunksExact<'_, T> {
         self.data.chunks_exact(self.columns)
+    }
+
+    /// Create a mutable iterator over all the rows in the matrix
+    pub fn iter_rows_mut(&mut self) -> core::slice::ChunksExactMut<'_, T> {
+        self.data.chunks_exact_mut(self.columns)
     }
 
     /// Creates an iterator over all the columns in the matrix
@@ -231,7 +244,7 @@ impl<T> Iterator for IntoRows<T> {
         if self.data.is_empty() { return None }
         
         let mut chunk = self.data.split_off(self.columns);
-        std::mem::swap(&mut chunk, &mut self.data);
+        mem::swap(&mut chunk, &mut self.data);
 
         Some(chunk)
     }
