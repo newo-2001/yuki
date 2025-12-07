@@ -12,7 +12,7 @@ use super::direction::Directions;
     Debug, Clone, Copy, PartialEq, Eq, Hash, Default,
     derive_more::Add, derive_more::Sub, derive_more::Neg
 )]
-pub struct Point<T = usize> {
+pub struct Point<T> {
     pub x: T,
     pub y: T
 }
@@ -103,18 +103,20 @@ impl<T> From<Point<T>> for (T, T) {
     }
 }
 
-impl<T> PartialOrd for Point<T> where
-    T: PartialOrd
+impl<T> Ord for Point<T> where
+    T: Ord
 {
-    /// The product order of the points on the cartesian plane
-    fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
-        let x = self.x.partial_cmp(&other.x)?;
-        let y = self.y.partial_cmp(&other.y)?;
+    fn cmp(&self, other: &Self) -> Ordering {
+        self.y.cmp(&other.y)
+            .then(self.x.cmp(&other.x))
+    }
+}
 
-        match (x, y) {
-            (Ordering::Equal, order) | (order, Ordering::Equal) => Some(order),
-            (_, _) => None
-        }
+impl<T> PartialOrd for Point<T> where
+    T: Ord
+{
+    fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
+        Some(self.cmp(other))
     }
 }
 
@@ -168,9 +170,9 @@ mod tests {
 
     #[test]
     fn point_order() {
-        assert_eq!(None, Point::new(0, 1).partial_cmp(&Point::new(1, 0)));
-        assert_eq!(Some(Ordering::Equal), Point::new(1, 1).partial_cmp(&Point::new(1, 1)));
-        assert_eq!(Some(Ordering::Greater), Point::new(0, 1).partial_cmp(&Point::new(0, 0)));
-        assert_eq!(Some(Ordering::Less), Point::new(0, 0).partial_cmp(&Point::new(1, 0)));
+        assert!(Point::new(0, 1) > Point::new(1, 0));
+        assert!(Point::new(0, 1) > Point::new(0, 0));
+        assert!(Point::new(0, 0) < Point::new(1, 0));
+        assert_eq!(Ordering::Equal, Point::new(1, 1).cmp(&Point::new(1, 1)));
     }
 }
