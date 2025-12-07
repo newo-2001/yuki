@@ -10,8 +10,10 @@ use super::direction::Directions;
 /// Represents a point in 2D space
 #[derive(
     Debug, Clone, Copy, PartialEq, Eq, Hash, Default,
-    derive_more::Add, derive_more::Sub, derive_more::Neg
+    derive_more::Add, derive_more::Sub, derive_more::Neg,
+    derive_more::Display
 )]
+#[display("({}, {})", x, y)]
 pub struct Point<T> {
     pub x: T,
     pub y: T
@@ -174,5 +176,11 @@ mod tests {
         assert!(Point::new(0, 1) > Point::new(0, 0));
         assert!(Point::new(0, 0) < Point::new(1, 0));
         assert_eq!(Ordering::Equal, Point::new(1, 1).cmp(&Point::new(1, 1)));
+    }
+
+    #[test]
+    fn point_display() {
+        assert_eq!("(1, 2)", Point::new(1, 2).to_string());
+        assert_eq!("(-1, -2)", Point::new(-1, -2).to_string());
     }
 }
