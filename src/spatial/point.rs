@@ -1,7 +1,12 @@
 use std::cmp::{minmax, Ordering};
 use std::ops::{Add, Sub};
 
+use nom::Parser;
+use nom::character::complete::char;
+use nom::sequence::separated_pair;
 use num_traits::{Num, One, Zero};
+
+use crate::parsing::{Parsable, ParsingResult};
 
 use super::super::num::CheckedAddSigned;
 
@@ -119,6 +124,16 @@ impl<T> PartialOrd for Point<T> where
 {
     fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
         Some(self.cmp(other))
+    }
+}
+
+impl<'a, T> Parsable<'a> for Point<T> where
+    T: Parsable<'a>
+{
+    fn parse(input: &'a str) -> ParsingResult<'a, Self> {
+        separated_pair(T::parse, char(','), T::parse)
+            .map(Point::from)
+            .parse(input)
     }
 }
 
