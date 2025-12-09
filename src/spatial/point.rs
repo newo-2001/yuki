@@ -6,6 +6,7 @@ use nom::character::complete::char;
 use nom::sequence::separated_pair;
 use num_traits::{Num, One, Zero};
 
+use crate::num::AbsDiff;
 use crate::parsing::{Parsable, ParsingResult};
 
 use super::super::num::CheckedAddSigned;
@@ -95,6 +96,17 @@ impl<T> Point<T> {
         let [min_y, max_y] = minmax(self.y, other.y);
 
         max_x - min_x + max_y - min_y
+    }
+
+    #[must_use]
+    /// Computes the absolute difference between two points
+    pub fn abs_diff(self, rhs: Self) -> Point<T::Unsigned> where 
+        T: AbsDiff
+    {
+        Point {
+            x: self.x.abs_diff(rhs.x),
+            y: self.y.abs_diff(rhs.y)
+        }
     }
 }
 
@@ -197,5 +209,18 @@ mod tests {
     fn point_display() {
         assert_eq!("(1, 2)", Point::new(1, 2).to_string());
         assert_eq!("(-1, -2)", Point::new(-1, -2).to_string());
+    }
+
+    #[test]
+    fn abs_diff() {
+        assert_eq!(
+            Point::<u32>::new(2, 2),
+            Point::<u32>::new(4, 3).abs_diff(Point::<u32>::new(2, 5))
+        );
+
+        assert_eq!(
+            Point::<u16>::new(2, 8),
+            Point::<i16>::new(-2, 3).abs_diff(Point::<i16>::new(-4, -5))
+        )
     }
 }

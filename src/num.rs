@@ -11,37 +11,53 @@ pub trait CheckedAddSigned where
     fn checked_add_signed(self, rhs: Self::Signed) -> Option<Self>;
 }
 
-macro_rules! impl_checked_add_signed {
-    ($type:ty, $signed:ty) => {
-        impl CheckedAddSigned for $type {
+pub trait AbsDiff where
+    Self: Sized
+{
+    type Unsigned;
+
+    fn abs_diff(self, other: Self) -> Self::Unsigned;
+}
+
+macro_rules! impl_num_traits {
+    ($unsigned:ty, $signed:ty) => {
+        impl CheckedAddSigned for $signed {
             type Signed = $signed;
-
-            fn checked_add_signed(self, rhs: Self::Signed) -> Option<Self> {
-                <$type>::checked_add_signed(self, rhs)
-            }
-        }
-    };
-
-    ($type:ty) => {
-        impl CheckedAddSigned for $type {
-            type Signed = $type;
 
             fn checked_add_signed(self, rhs: Self::Signed) -> Option<Self> {
                 self.checked_add(rhs)
             }
         }
+
+        impl CheckedAddSigned for $unsigned {
+            type Signed = $signed;
+
+            fn checked_add_signed(self, rhs: Self::Signed) -> Option<Self> {
+                <$unsigned>::checked_add_signed(self, rhs)
+            }
+        }
+
+        impl AbsDiff for $signed {
+            type Unsigned = $unsigned;
+
+            fn abs_diff(self, rhs: Self) -> Self::Unsigned {
+                self.abs_diff(rhs)
+            }
+        }
+
+        impl AbsDiff for $unsigned {
+            type Unsigned = $unsigned;
+
+            fn abs_diff(self, rhs: Self) -> Self::Unsigned {
+                self.abs_diff(rhs)
+            }
+        }
     }
 }
 
-impl_checked_add_signed!(u8, i8);
-impl_checked_add_signed!(u16, i16);
-impl_checked_add_signed!(u32, i32);
-impl_checked_add_signed!(u64, i64);
-impl_checked_add_signed!(u128, i128);
-impl_checked_add_signed!(usize, isize);
-impl_checked_add_signed!(i8);
-impl_checked_add_signed!(i16);
-impl_checked_add_signed!(i32);
-impl_checked_add_signed!(i64);
-impl_checked_add_signed!(i128);
-impl_checked_add_signed!(isize);
+impl_num_traits!(u8, i8);
+impl_num_traits!(u16, i16);
+impl_num_traits!(u32, i32);
+impl_num_traits!(u64, i64);
+impl_num_traits!(u128, i128);
+impl_num_traits!(usize, isize);
